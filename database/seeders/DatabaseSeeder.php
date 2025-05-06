@@ -15,19 +15,19 @@ class DatabaseSeeder extends Seeder
     {
        
 
-        // $this->call([
-        //     RoleSeeder::class,
-        //     AdminSeeder::class,
-        //     CurrencySeeder::class,
-        //     SectorSeeder::class,
+        $this->call([
+            RoleSeeder::class,
+            AdminSeeder::class,
+            CurrencySeeder::class,
+            SectorSeeder::class,
         //     // StaffSeeder::class,
-        //     DepartmentSeeder::class,
+            DepartmentSeeder::class,
         //     // PositionSeeder::class,
         //     // ProjectSeeder::class,
-        //     // CategorySeeder::class,
+            CategorySeeder::class,
         //     // StaffDetailSeeder::class,
         //     // TaskSeeder::class,
-        // ]);
+        ]);
 
 
         AttendanceFactory::times(1)->create();
