@@ -1,0 +1,23 @@
+name: Deploy to Ubuntu Server
+
+on:
+  push:
+    branches:
+      - live
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy Laravel app
+        run: |
+          ssh -o StrictHostKeyChecking=no root@143.198.149.124 'cd /var/www/laravel && git pull origin live && composer install && php artisan migrate:fresh --seed && php artisan optimize && npm run dev'
