@@ -19,7 +19,6 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Validation\Rules\Password;
 use Filament\Support\Facades\FilamentView;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
-use App\Filament\Resources\Pages\FinanceReport;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Routing\Middleware\SubstituteBindings;
@@ -69,7 +68,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Dashboard::class,
-                FinanceReport::class,
+             
             ])
             ->navigationGroups([
                 NavigationGroup::make('Programs'),

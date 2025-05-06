@@ -26,7 +26,7 @@ class TaskBoard extends KanbanBoard
 
     public $staff = null;
 
-    protected function getEditModalFormSchema(?int $recordId): array
+    protected function getEditModalFormSchema(string|int|null $recordId): array
     {
         return Task::getForm();
     }

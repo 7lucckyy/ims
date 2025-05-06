@@ -16,7 +16,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
 
-class ReportResource extends Resource
+class ProgramReportResource extends Resource
 {
     protected static ?string $model = Report::class;
 
