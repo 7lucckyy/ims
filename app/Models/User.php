@@ -142,5 +142,8 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         return in_array($this->id, $inDepartment);
     }
 
+    
+
+
 
 }
