@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use Carbon\Carbon;
 use Filament\Forms;
 use App\Models\User;
 use Filament\Tables;
@@ -19,62 +20,60 @@ class AttendanceResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-bars-3-bottom-left';
 
-    protected static ?string $navigationGroup = 'HR';
-
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('staff_id')
-                    ->required(),
-                Forms\Components\DatePicker::make('clock_in_date')
-                    ->required(),
-                Forms\Components\TextInput::make('clock_in_time')
-                    ->required(),
-                Forms\Components\TextInput::make('clock_out'),
-            ]);
+        return $form->schema([
+            Forms\Components\TextInput::make('staff_id')
+                ->label('Staff ID')
+                ->required(),
+
+            Forms\Components\DatePicker::make('clock_in_date')
+                ->label('Date')
+                ->required(),
+
+            Forms\Components\TextInput::make('clock_in')
+                ->label('Time In')
+                ->required(),
+
+            Forms\Components\TextInput::make('clock_out')
+                ->label('Time Out')
+                ->nullable(),
+        ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                TextColumn::make('name')
+                TextColumn::make('user_name')
+                    ->label('Name')
                     ->default(function (Model $model) {
-                        $staff = User::where([
-                            'staffId' => $model->staff_id,
-                        ])->get()->first();
-                        if ($staff == null) {
-                            return '';
-                        }
-
-                        return $staff->name;
+                        $user = User::where('staffid', $model->staff_id)->first();
+                        return $user ? $user->name : 'Unknown';
                     }),
+
                 TextColumn::make('clock_in_date')
                     ->label('Date'),
+
                 TextColumn::make('clock_in_time')
                     ->label('Time In'),
-                TextColumn::make('Time Spent')
-                    ->default(function (Model $model) {
-                        $date = $model->clock_in_date.' '.$model->clock_in_time;
 
-                        $date = \Carbon\Carbon::parse($date);
-                        $out = \Carbon\Carbon::parse($model->clock_out);
-
-                        return $date->diff($out)->hours.' hours';
-                    }),
                 TextColumn::make('clock_out')
                     ->label('Time Out'),
+
+                TextColumn::make('duration')
+                ->label('Time Spent')
+                ->default(fn ($record) => $record->duration ??''),
+
             ])
             ->filters([
-                date('Y-m-d') => 'Today',
-                date('Y-m-d', strtotime('-1 day')) => 'Yesterday',
-                date('Y-m-d', strtotime('-1 week')) => 'Last Week',
-                date('Y-m-d', strtotime('-1 month')) => 'Last Month',
+                Tables\Filters\SelectFilter::make('staff_id')
+                    ->label('Filter by User')
+                    ->options(
+                        User::pluck('name', 'staffid')->toArray()
+                    ),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-            ])
+           
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
@@ -84,9 +83,7 @@ class AttendanceResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array

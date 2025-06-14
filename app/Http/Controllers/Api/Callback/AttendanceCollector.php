@@ -21,7 +21,8 @@ class AttendanceCollector extends Controller
         $today = Carbon::now('Africa/Lagos')->toDateString();
 
         // Check if user with this staff_id exists
-        $user = User::where('staffid', $staffId)->first();
+        $user = User::whereRaw('"staffId" = ?', [$staffId])->first();
+
 
         if (! $user) {
             return response()->json([
