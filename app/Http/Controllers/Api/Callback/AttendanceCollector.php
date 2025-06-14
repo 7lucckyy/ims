@@ -40,7 +40,7 @@ class AttendanceCollector extends Controller
             Attendance::create([
                 'staff_id' => $staffId,
                 'clock_in_date' => $today,
-                'clock_in' => Carbon::now('Africa/Lagos')->toTimeString(),
+                'clock_in_time' => Carbon::now('Africa/Lagos')->toTimeString(),
             ]);
 
             return response()->json([
