@@ -4,49 +4,62 @@ namespace App\Http\Controllers\Api\Callback;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class AttendanceCollector extends Controller
 {
     public function collect(Request $request)
     {
+        // Validate input
         $validated = $request->validate([
-            'staff_id' => 'required|integer',
+            'staff_id' => 'required|string',
         ]);
 
-        $today = now()->toDateString();
+        $staffId = $validated['staff_id'];
+        $today = Carbon::now('Africa/Lagos')->toDateString();
 
-        $attendance = Attendance::where('staff_id', $validated['staff_id'])
-            ->where('clock_in_date', $today)
-            ->first();
+        // Check if user with this staff_id exists
+        $user = User::where('staffid', $staffId)->first();
 
-        // Clock in if no record exists
+        if (! $user) {
+            return response()->json([
+                'message' => 'Staff record not found.',
+            ], 404);
+        }
+
+        // Check attendance record for today
+        $attendance = Attendance::where('staff_id', $staffId)
+                                ->where('clock_in_date', $today)
+                                ->first();
+
         if (! $attendance) {
+            // Clock-in
             Attendance::create([
-                'staff_id' => $validated['staff_id'],
+                'staff_id' => $staffId,
                 'clock_in_date' => $today,
-                'clock_in' => now()->toTimeString(), // Optional: log time-in
+                'clock_in' => Carbon::now('Africa/Lagos')->toTimeString(),
             ]);
 
             return response()->json([
-                'message' => 'Clock-in recorded successfully',
-            ]);
+                'message' => 'Clock-in successful.',
+            ], 201);
         }
 
-        // Prevent double clock-out
         if ($attendance->clock_out !== null) {
             return response()->json([
-                'message' => 'Staff already clocked out today',
-            ]);
+                'message' => 'Already clocked out today.',
+            ], 200);
         }
 
-        // Clock out
+        // Clock-out
         $attendance->update([
-            'clock_out' => now()->toTimeString(),
+            'clock_out' => Carbon::now('Africa/Lagos')->toTimeString(),
         ]);
 
         return response()->json([
-            'message' => 'Clock-out recorded successfully',
-        ]);
+            'message' => 'Clock-out successful.',
+        ], 200);
     }
 }

@@ -62,22 +62,22 @@ class AttendanceResource extends Resource
             TextColumn::make('clock_out')
                 ->label('Time Out'),
 
-            TextColumn::make('duration')
-                ->label('Time Spent')
-                ->default(function (Attendance $record) {
-                    if (!$record->clock_out) return 'Still clocked in';
+            // TextColumn::make('duration')
+            //     ->label('Time Spent')
+            //     ->formatStateUsing(function (Model $model) {
+            //         if (!$model->clock_out) {
+            //             return 'Still Clocked In';
+            //         }
 
-                    $in = Carbon::parse("{$record->clock_in_date} {$record->clock_in_time}");
-                    $out = Carbon::parse($record->clock_out);
+            //         $start = Carbon::parse("{$model->clock_in_date} {$model->clock_in_time}");
+            //         $end = Carbon::parse("{$model->clock_in_date} {$model->clock_out}");
 
-                    return $in->diff($out)->format('%h hrs %i mins');
-                })
-                ->color(fn (Attendance $record) => $record->clock_out ? 'success' : 'danger'),
+            //         return $start->diff($end)->format('%h hours %i minutes');
+            //     }),
+
         ])
-        ->filters([])
-        ->actions([
-            Tables\Actions\EditAction::make(),
-        ])
+     
+
         ->bulkActions([
             Tables\Actions\BulkActionGroup::make([
                 Tables\Actions\DeleteBulkAction::make(),
