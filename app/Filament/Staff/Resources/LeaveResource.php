@@ -39,11 +39,11 @@ class LeaveResource extends Resource
                     ->html()
                     ->columnSpanFull(),
                 TextEntry::make('duration')
-                    ->getStateUsing(fn ($record) => Carbon::parse($record->start_date)->toDateString().' to '.Carbon::parse($record->start_date)->toDateString()),
+                    ->getStateUsing(fn($record) => Carbon::parse($record->start_date)->toDateString() . ' to ' . Carbon::parse($record->start_date)->toDateString()),
                 TextEntry::make('document.file')
                     ->label('Document')
-                    ->formatStateUsing(fn () => 'Download Document')
-                    ->url(fn ($record) => Storage::url($record->document->file), true)
+                    ->formatStateUsing(fn() => 'Download Document')
+                    ->url(fn($record) => Storage::url($record->document->file), true)
                     ->badge()
                     ->color('blue'),
             ]);

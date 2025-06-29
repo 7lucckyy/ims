@@ -24,10 +24,10 @@ class CreateLeave extends CreateRecord
             'aspected_resumption_date' => $data['aspected_resumption_date'],
         ]);
 
-        $data['document'] ?: $leave->document()->create([
+        $data['document'] ? $leave->document()->create([
             'type' => DocumentType::Attachment,
             'file' => $data['document'],
-        ]);
+        ]) : null;
 
         return $leave;
     }

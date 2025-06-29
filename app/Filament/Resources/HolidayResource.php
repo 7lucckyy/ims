@@ -2,49 +2,50 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\TimeSheetResource\Pages;
-use App\Models\TimeSheet;
+use App\Filament\Resources\HolidayResource\Pages;
+use App\Filament\Resources\HolidayResource\RelationManagers;
+use App\Models\Holiday;
+use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class TimeSheetResource extends Resource
+class HolidayResource extends Resource
 {
-    protected static ?string $model = TimeSheet::class;
+    protected static ?string $model = Holiday::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-table-cells';
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?string $navigationGroup = 'HR';
-
-    protected static ?string $navigationLabel = 'Timesheets';
 
     public static function form(Form $form): Form
     {
         return $form
-            ->schema(TimeSheet::getForm());
+            ->schema([
+                Forms\Components\DatePicker::make('date')
+                    ->required(),
+                Forms\Components\TextInput::make('name')
+                    ->required(),
+            ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')
-                    ->numeric()
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('hours')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('date')
                     ->date()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable(),
             ])
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
@@ -64,10 +65,9 @@ class TimeSheetResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTimeSheets::route('/'),
-            'create' => Pages\CreateTimeSheet::route('/create'),
-            'view' => Pages\ViewTimeSheet::route('/{record}'),
-            'edit' => Pages\EditTimeSheet::route('/{record}/edit'),
+            'index' => Pages\ListHolidays::route('/'),
+            'create' => Pages\CreateHoliday::route('/create'),
+            'edit' => Pages\EditHoliday::route('/{record}/edit'),
         ];
     }
 }

@@ -2,6 +2,9 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\LeaveStatus;
+use App\Models\Holiday;
+use App\Models\Leave;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Attendance;
@@ -27,7 +30,7 @@ class AttendanceResource extends Resource
         return $form->schema([
             Forms\Components\Select::make('staff_id')
                 ->label('Staff')
-                ->options(User::pluck('name', 'staffid')->toArray())
+                ->options(User::pluck('name', 'staffId')->toArray())
                 ->required()
                 ->searchable(),
 
@@ -54,12 +57,12 @@ class AttendanceResource extends Resource
                     ->label('Staff ID')
                     ->sortable()
                     ->searchable(),
-                    
+
                 // Display user name using a custom query
                 TextColumn::make('user_name')
                     ->label('Name')
                     ->getStateUsing(function (Attendance $record) {
-                        $user = User::where('staffid', $record->staff_id)->first();
+                        $user = User::where('staffId', $record->staff_id)->first();
                         return $user ? $user->name : 'Unknown';
                     }),
 
@@ -79,16 +82,17 @@ class AttendanceResource extends Resource
                 TextColumn::make('time_spent')
                     ->label('Time Spent')
                     ->getStateUsing(function (Attendance $record) {
-                        if (!$record->clock_in_time || !$record->clock_out) return '-';
-                        
+                        if (!$record->clock_in_time || !$record->clock_out)
+                            return '-';
+
                         $clockIn = Carbon::parse($record->clock_in_date . ' ' . $record->clock_in_time);
                         $clockOut = Carbon::parse($record->clock_in_date . ' ' . $record->clock_out);
-                        
+
                         // Handle overnight shifts
                         if ($clockOut < $clockIn) {
                             $clockOut->addDay();
                         }
-                        
+
                         $diff = $clockIn->diff($clockOut);
                         return sprintf('%d hrs %d mins', $diff->h, $diff->i);
                     }),
@@ -96,7 +100,7 @@ class AttendanceResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('staff_id')
                     ->label('Filter by User')
-                    ->options(User::pluck('name', 'staffid')->toArray())
+                    ->options(User::pluck('name', 'staffId')->toArray())
                     ->searchable(),
             ])
             ->headerActions([
@@ -106,17 +110,17 @@ class AttendanceResource extends Resource
                     ->form([
                         Forms\Components\Select::make('staff_id')
                             ->label('Select Staff')
-                            ->options(User::pluck('name', 'staffid')->toArray())
+                            ->options(User::pluck('name', 'staffId')->toArray())
                             ->required()
                             ->searchable()
                             ->native(false),
-                        
+
                         Forms\Components\DatePicker::make('start_date')
                             ->label('Start Date')
                             ->required()
                             ->default(now()->startOfMonth())
                             ->displayFormat('M d, Y'),
-                        
+
                         Forms\Components\DatePicker::make('end_date')
                             ->label('End Date')
                             ->required()
@@ -125,46 +129,68 @@ class AttendanceResource extends Resource
                     ])
                     ->action(function (array $data) {
                         $user = User::with(['staffDetail.department', 'staffDetail.position', 'projects'])
-                            ->where('staffid', $data['staff_id'])
+                            ->where('staffId', $data['staff_id'])
                             ->first();
-                        
+
                         if (!$user) {
                             throw new \Exception('User not found');
                         }
-                        
+
                         $startDate = Carbon::parse($data['start_date']);
                         $endDate = Carbon::parse($data['end_date']);
-                        
+
                         if ($startDate->diffInDays($endDate) > 31) {
                             throw new \Exception('Date range cannot exceed 31 days');
                         }
-                        
+
+                        $holidays = Holiday::whereBetween('date', [$startDate, $endDate])
+                            ->get()
+                            ->keyBy(function ($item) {
+                                return Carbon::parse($item->date)->format('Y-m-d');
+                            });
+
+                        $leaves_start = Leave::where('approval', LeaveStatus::Approved->value)
+                            ->whereBetween('start_date', [$startDate, $endDate])
+                            ->get()
+                            ->keyBy(function ($item) {
+                                return Carbon::parse($item->start_date)->format('Y-m-d');
+                            });
+
+                        $leaves_end = Leave::where('approval', LeaveStatus::Approved->value)
+                            ->whereBetween('aspected_resumption_date', [$startDate, $endDate])
+                            ->get()
+                            ->keyBy(function ($item) {
+                                return Carbon::parse($item->aspected_resumption_date)->format('Y-m-d');
+                            });
+
                         $attendances = Attendance::where('staff_id', $data['staff_id'])
                             ->whereBetween('clock_in_date', [$startDate, $endDate])
                             ->get()
                             ->keyBy(function ($item) {
                                 return Carbon::parse($item->clock_in_date)->format('Y-m-d');
                             });
-                        
+
                         $period = $startDate->daysUntil($endDate->addDay());
-                        
-                        $filename = "Timesheet_{$user->name}_" . 
-                                   $startDate->format('M_d') . '_to_' . 
-                                   $endDate->format('d') . '.pdf';
-                        
+
+                        $filename = "Timesheet_{$user->name}_" .
+                            $startDate->format('M_d') . '_to_' .
+                            $endDate->format('d') . '.pdf';
+
                         $pdf = Pdf::loadHtml(
                             Blade::render('pdf.timesheet', [
                                 'user' => $user,
                                 'period' => $period,
                                 'attendances' => $attendances,
+                                'holidays' => $holidays,
+                                'leaves' => ['start' => $leaves_start->toArray(), 'end' => $leaves_end->toArray()],
                                 'start_date' => $startDate,
                                 'end_date' => $endDate,
                                 'projects' => $user->projects
                             ])
                         )->setPaper('a4', 'landscape');
-                        
+
                         return response()->streamDownload(
-                            fn () => print($pdf->output()),
+                            fn() => print ($pdf->output()),
                             $filename
                         );
                     })
